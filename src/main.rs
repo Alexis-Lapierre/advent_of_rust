@@ -1,7 +1,9 @@
 use std::env;
 
 mod advent_of_code_2022;
-use advent_of_code_2022::advent_of_code_2022;
+mod read_file;
+
+use crate::advent_of_code_2022::advent_of_code_2022;
 
 fn main() {
     let (year, day) = get_year_and_day();
