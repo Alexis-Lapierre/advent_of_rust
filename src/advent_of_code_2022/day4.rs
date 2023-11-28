@@ -15,33 +15,24 @@ mod parse {
         self,
         bytes::complete::tag,
         character::complete::{newline, u32 as nom_u32},
+        combinator::all_consuming,
+        multi::separated_list1,
+        sequence::separated_pair,
         IResult,
     };
 
     fn elf_section(input: &str) -> IResult<&str, Range> {
-        let (input, start) = nom_u32(input)?;
-        let (input, _) = tag("-")(input)?;
-        let (input, end) = nom_u32(input)?;
-
-        Ok((input, (start, end)))
+        separated_pair(nom_u32, tag("-"), nom_u32)(input)
     }
 
     fn line(input: &str) -> IResult<&str, Line> {
-        let (input, first) = elf_section(input)?;
-        let (input, _) = tag(",")(input)?;
-        let (input, second) = elf_section(input)?;
-
-        Ok((input, (first, second)))
+        separated_pair(elf_section, tag(","), elf_section)(input)
     }
 
     pub fn lines(input: &str) -> Option<Vec<Line>> {
-        if let Ok((_, result)) =
-            nom::combinator::all_consuming(nom::multi::separated_list1(newline, line))(input)
-        {
-            Some(result)
-        } else {
-            None
-        }
+        all_consuming(separated_list1(newline, line))(input)
+            .map(|(_str, lines)| lines)
+            .ok()
     }
 }
 
