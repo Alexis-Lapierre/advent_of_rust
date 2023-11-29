@@ -2,7 +2,7 @@ use crate::read_file::read_file;
 
 pub fn solve() -> (u32, u32) {
     let content = read_file(2022, 4).expect("File input/2022/04.txt to exist");
-    println!("Content is: {:?}", content);
+    println!("Content is: {content:?}");
     todo!()
 }
 
@@ -39,7 +39,7 @@ mod parse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const INPUT: &'static str = "2-4,6-8
+    const INPUT: &str = "2-4,6-8
 2-3,4-5
 5-7,7-9
 2-8,3-7

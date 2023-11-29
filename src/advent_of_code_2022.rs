@@ -5,5 +5,5 @@ pub fn advent_of_code_2022(day: u8) {
         _ => todo!(),
     };
 
-    println!("{:?}", result);
+    println!("{result:?}");
 }
