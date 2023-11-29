@@ -1,13 +1,36 @@
 use crate::read_file::read_file;
 
-pub fn solve() -> (u32, u32) {
-    let content = read_file(2022, 4).expect("File input/2022/04.txt to exist");
-    println!("Content is: {content:?}");
-    todo!()
-}
-
 type Range = (u32, u32);
 type Line = (Range, Range);
+
+pub fn solve() -> (usize, usize) {
+    let content = read_file(2022, 4).expect("File input/2022/04.txt to exist");
+    let parsed = parse::lines(&content).expect("expected parsing to be successful");
+
+    (silver(&parsed), gold(&parsed))
+}
+
+fn silver(lines: &[Line]) -> usize {
+    lines.iter().filter(|line| silver_line(line)).count()
+}
+
+fn silver_line(line: &Line) -> bool {
+    let ((left_start, left_end), (right_start, right_end)) = line;
+    (left_start <= right_start && left_end >= right_end)
+        || (left_start >= right_start && left_end <= right_end)
+}
+
+fn gold(lines: &[Line]) -> usize {
+    lines.iter().filter(|line| gold_line(line)).count()
+}
+
+fn gold_line(line: &Line) -> bool {
+    let ((left_start, left_end), (right_start, right_end)) = line;
+    (left_start >= right_start && left_start <= right_end)
+        || (left_end >= right_start && left_end <= right_end)
+        || (right_start >= left_start && right_start <= left_end)
+        || (right_end >= left_start && right_end <= left_end)
+}
 
 mod parse {
     use super::*;
@@ -15,7 +38,6 @@ mod parse {
         self,
         bytes::complete::tag,
         character::complete::{newline, u32 as nom_u32},
-        combinator::all_consuming,
         multi::separated_list1,
         sequence::separated_pair,
         IResult,
@@ -29,10 +51,8 @@ mod parse {
         separated_pair(elf_section, tag(","), elf_section)(input)
     }
 
-    pub fn lines(input: &str) -> Option<Vec<Line>> {
-        all_consuming(separated_list1(newline, line))(input)
-            .map(|(_str, lines)| lines)
-            .ok()
+    pub fn lines(input: &str) -> Result<Vec<Line>, nom::Err<nom::error::Error<&str>>> {
+        separated_list1(newline, line)(input).map(|(_, lines)| lines)
     }
 }
 
@@ -60,5 +80,21 @@ mod tests {
                 ((2, 6), (4, 8)),
             ]
         );
+    }
+
+    #[test]
+    fn test_silver_line() {
+        const LINE: Line = ((6, 6), (3, 6));
+        assert_eq!(silver_line(&LINE), true);
+    }
+
+    #[test]
+    fn test_silver() {
+        assert_eq!(silver(&parse::lines(INPUT).unwrap()), 2);
+    }
+
+    #[test]
+    fn test_gold() {
+        assert_eq!(gold(&parse::lines(INPUT).unwrap()), 4);
     }
 }
