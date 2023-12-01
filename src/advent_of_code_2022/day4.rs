@@ -33,7 +33,6 @@ fn gold_line(line: &Line) -> bool {
 }
 
 mod parse {
-    use super::*;
     use nom::{
         self,
         bytes::complete::tag,
@@ -42,6 +41,8 @@ mod parse {
         sequence::separated_pair,
         IResult,
     };
+
+    use super::{Line, Range};
 
     fn elf_section(input: &str) -> IResult<&str, Range> {
         separated_pair(nom_u32, tag("-"), nom_u32)(input)
@@ -58,7 +59,8 @@ mod parse {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{gold, parse, silver, silver_line, Line};
+
     const INPUT: &str = "2-4,6-8
 2-3,4-5
 5-7,7-9

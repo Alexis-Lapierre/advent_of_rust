@@ -20,7 +20,7 @@ struct LineInfo {
 }
 
 impl LineInfo {
-    fn to_result(&self) -> u32 {
+    const fn to_result(&self) -> u32 {
         self.start * 10 + self.end
     }
 
@@ -107,13 +107,14 @@ mod parse {
     }
 
     fn take_one_lambda(input: &str) -> IResult<&str, &str> {
-        take(1usize)(input)
+        take(1_usize)(input)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{parse, sum, LineInfo};
+
     const SILVER_INPUT: &str = "1abc2
 pqr3stu8vwx
 a1b2c3d4e5f
