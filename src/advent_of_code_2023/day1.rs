@@ -2,96 +2,112 @@ use crate::read_file::read_file;
 
 pub fn solve() -> (u32, u32) {
     let content = read_file(2023, 1).expect("File input/2023/01.txt to exist");
-    let silver_parsed = parse::lines(&content);
-    let gold_parsed = parse::gold_lines(&content);
 
-    (silver(silver_parsed), gold(gold_parsed))
+    let silver = parse::lines(&content, &parse::silver_parser);
+    let gold = parse::lines(&content, &parse::gold_parser);
+
+    (sum(silver), sum(gold))
 }
 
-fn silver(elems: impl Iterator<Item = u32>) -> u32 {
-    elems.sum()
+fn sum(lines: impl Iterator<Item = LineInfo>) -> u32 {
+    lines.map(|l| l.to_result()).sum()
 }
 
-fn gold(lines: impl Iterator<Item = Vec<u8>>) -> u32 {
-    lines.map(|line| gold_line(&line)).sum()
+#[derive(Debug, PartialEq, Eq)]
+struct LineInfo {
+    start: u32,
+    end: u32,
 }
 
-fn gold_line(line: &[u8]) -> u32 {
-    // First * 10 + Last
-    u32::from(*line.first().unwrap() * 10 + *line.last().unwrap())
+impl LineInfo {
+    fn to_result(&self) -> u32 {
+        self.start * 10 + self.end
+    }
+
+    const fn from(start: u32, end: u32) -> Self {
+        Self { start, end }
+    }
+
+    const fn progressive_parse(&self, new_end: u32) -> Self {
+        Self::from(self.start, new_end)
+    }
 }
 
 mod parse {
     use nom::{
         bytes::complete::{tag, take},
-        character::complete::alpha0,
+        combinator::map_res,
+        IResult,
     };
 
-    fn line(input: &str) -> Result<u32, nom::Err<nom::error::Error<&str>>> {
-        let first = first_number(input)?;
-        let rev_input = input.chars().rev().collect::<String>();
-        let last = first_number(rev_input.as_str()).unwrap();
+    use super::LineInfo;
 
-        Ok(first * 10 + last)
+    pub fn lines<'a, F>(input: &'a str, parser: &'a F) -> impl Iterator<Item = LineInfo> + 'a
+    where
+        F: Fn(&str) -> IResult<&str, u32> + 'a,
+    {
+        let line_parser = line(parser);
+        input.lines().map(line_parser)
     }
 
-    fn first_number(input: &str) -> Result<u32, nom::Err<nom::error::Error<&str>>> {
-        let (input, _) = alpha0(input)?;
-        let searched = input.chars().next().unwrap().to_digit(10).unwrap();
-        Ok(searched)
-    }
+    fn line<'a, F>(parser: &'a F) -> impl Fn(&str) -> LineInfo + 'a
+    where
+        F: Fn(&str) -> IResult<&str, u32> + 'a,
+    {
+        |input: &str| {
+            let mut previous_input = input;
+            let mut find_first = || loop {
+                if let Ok((_, found)) = parser(previous_input) {
+                    return LineInfo::from(found, found);
+                };
+                // line should always contain at least one number
+                // hence the unwrap
+                previous_input = take_one(previous_input).unwrap();
+            };
 
-    pub fn lines(input: &str) -> impl Iterator<Item = u32> + '_ {
-        input.lines().map(line).map(std::result::Result::unwrap)
-    }
+            let mut result = find_first();
+            while let Some(next_value) = take_one(previous_input) {
+                if let Ok((_, value)) = parser(previous_input) {
+                    result = result.progressive_parse(value);
+                };
 
-    fn gold_line(input: &str) -> Vec<u8> {
-        let mut result: Vec<u8> = Vec::new();
-        let mut previous_input = input;
-        while let Ok((input, char)) = gold_selector(previous_input) {
-            if let Some(n) = match char {
-                "one" | "1" => Some(1),
-                "two" | "2" => Some(2),
-                "three" | "3" => Some(3),
-                "four" | "4" => Some(4),
-                "five" | "5" => Some(5),
-                "six" | "6" => Some(6),
-                "seven" | "7" => Some(7),
-                "eight" | "8" => Some(8),
-                "nine" | "9" => Some(9),
-                _ => None,
-            } {
-                result.push(n);
+                previous_input = next_value;
             }
 
-            let (the_previous_input, _) = take_one(previous_input).unwrap();
-            previous_input = the_previous_input;
+            result
         }
-
-        result
     }
 
-    fn gold_selector(input: &str) -> Result<(&str, &str), nom::Err<nom::error::Error<&str>>> {
+    pub fn gold_parser(input: &str) -> IResult<&str, u32> {
+        let lambda = |n: u32| move |_| -> Result<u32, &str> { Ok(n) };
+
         nom::branch::alt((
-            tag("one"),
-            tag("two"),
-            tag("three"),
-            tag("four"),
-            tag("five"),
-            tag("six"),
-            tag("seven"),
-            tag("eight"),
-            tag("nine"),
-            take(1usize),
+            silver_parser,
+            map_res(tag("one"), lambda(1)),
+            map_res(tag("two"), lambda(2)),
+            map_res(tag("three"), lambda(3)),
+            map_res(tag("four"), lambda(4)),
+            map_res(tag("five"), lambda(5)),
+            map_res(tag("six"), lambda(6)),
+            map_res(tag("seven"), lambda(7)),
+            map_res(tag("eight"), lambda(8)),
+            map_res(tag("nine"), lambda(9)),
         ))(input)
     }
 
-    fn take_one(input: &str) -> Result<(&str, &str), nom::Err<nom::error::Error<&str>>> {
-        take(1usize)(input)
+    pub fn silver_parser(input: &str) -> IResult<&str, u32> {
+        map_res(
+            nom::character::complete::one_of("123456789"),
+            |s| -> Result<u32, &str> { s.to_digit(10).ok_or(input) },
+        )(input)
     }
 
-    pub fn gold_lines(input: &str) -> impl Iterator<Item = Vec<u8>> + '_ {
-        input.lines().map(gold_line)
+    fn take_one(input: &str) -> Option<&str> {
+        take_one_lambda(input).map(|(next, _)| next).ok()
+    }
+
+    fn take_one_lambda(input: &str) -> IResult<&str, &str> {
+        take(1usize)(input)
     }
 }
 
@@ -102,7 +118,6 @@ mod tests {
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet";
-
     const GOLD_INPUT: &str = "two1nine
 eightwothree
 abcone2threexyz
@@ -111,39 +126,44 @@ xtwone3four
 zoneight234
 7pqrstsixteen";
 
+    const SILVER_INPUT_EXPECTED: [LineInfo; 4] = [
+        LineInfo::from(1, 2),
+        LineInfo::from(3, 8),
+        LineInfo::from(1, 5),
+        LineInfo::from(7, 7),
+    ];
+
+    const GOLD_INPUT_EXPECTED: [LineInfo; 7] = [
+        LineInfo::from(2, 9),
+        LineInfo::from(8, 3),
+        LineInfo::from(1, 3),
+        LineInfo::from(2, 4),
+        LineInfo::from(4, 2),
+        LineInfo::from(1, 4),
+        LineInfo::from(7, 6),
+    ];
+
     #[test]
     fn test_parse() {
-        let lines = parse::lines(SILVER_INPUT).collect::<Vec<u32>>();
-        assert_eq!(lines, vec![12, 38, 15, 77,]);
+        let lines: Vec<LineInfo> = parse::lines(SILVER_INPUT, &parse::silver_parser).collect();
+        assert_eq!(lines, SILVER_INPUT_EXPECTED);
     }
 
     #[test]
     fn test_gold_parse() {
-        let lines = parse::gold_lines(SILVER_INPUT)
-            .flatten()
-            .collect::<Vec<u8>>();
-        assert_eq!(lines, vec![1, 2, 3, 8, 1, 2, 3, 4, 5, 7]);
+        let lines = parse::lines(SILVER_INPUT, &parse::gold_parser).collect::<Vec<LineInfo>>();
+        assert_eq!(lines, SILVER_INPUT_EXPECTED);
 
-        let lines = parse::gold_lines(GOLD_INPUT).flatten().collect::<Vec<u8>>();
+        let lines: Vec<LineInfo> = parse::lines(GOLD_INPUT, &parse::gold_parser).collect();
 
-        assert_eq!(
-            lines,
-            vec![
-                2, 1, 9, //
-                8, 2, 3, //
-                1, 2, 3, //
-                2, 1, 3, 4, //
-                4, 9, 8, 7, 2, 1, 8, 2, 3, 4, //
-                7, 6
-            ]
-        );
+        assert_eq!(lines, GOLD_INPUT_EXPECTED);
     }
 
     #[test]
     fn test_gold() {
-        let lines = parse::gold_lines(SILVER_INPUT);
-        assert_eq!(gold(lines), 142);
-        let lines = parse::gold_lines(GOLD_INPUT);
-        assert_eq!(gold(lines), 281);
+        let lines = parse::lines(SILVER_INPUT, &parse::gold_parser);
+        assert_eq!(sum(lines), 142);
+        let lines = parse::lines(GOLD_INPUT, &parse::gold_parser);
+        assert_eq!(sum(lines), 281);
     }
 }

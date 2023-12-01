@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test_silver_line() {
         const LINE: Line = ((6, 6), (3, 6));
-        assert_eq!(silver_line(&LINE), true);
+        assert!(silver_line(&LINE));
     }
 
     #[test]
