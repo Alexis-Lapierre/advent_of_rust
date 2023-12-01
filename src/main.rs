@@ -1,9 +1,11 @@
 use std::env;
 
 mod advent_of_code_2022;
+mod advent_of_code_2023;
 mod read_file;
 
 use crate::advent_of_code_2022::advent_of_code_2022;
+use crate::advent_of_code_2023::advent_of_code_2023;
 
 fn main() {
     let (year, day) = get_year_and_day();
@@ -15,10 +17,6 @@ fn main() {
         2023 => advent_of_code_2023(day),
         _ => panic!("Unexpected year {year}"),
     }
-}
-
-fn advent_of_code_2023(day: u8) {
-    todo!()
 }
 
 fn get_year_and_day() -> (u16, u8) {
