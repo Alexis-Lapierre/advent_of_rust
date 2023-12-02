@@ -2,6 +2,7 @@ use std::env;
 
 mod advent_of_code_2022;
 mod advent_of_code_2023;
+mod aoc_result;
 mod read_file;
 
 use crate::advent_of_code_2022::advent_of_code_2022;
@@ -10,13 +11,14 @@ use crate::advent_of_code_2023::advent_of_code_2023;
 fn main() {
     let (year, day) = get_year_and_day();
 
-    println!("Starting {year}-{day}");
-
-    match year {
-        2022 => advent_of_code_2022(day),
-        2023 => advent_of_code_2023(day),
-        _ => panic!("Unexpected year {year}"),
-    }
+    println!(
+        "Starting {year}-{day}\n{}",
+        match year {
+            2022 => advent_of_code_2022(day),
+            2023 => advent_of_code_2023(day),
+            _ => panic!("Unexpected year {year}"),
+        }
+    );
 }
 
 fn get_year_and_day() -> (u16, u8) {

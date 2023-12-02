@@ -1,13 +1,13 @@
-use crate::read_file::read_file;
+use crate::{aoc_result::AOCResult, read_file::read_file};
 
 type Range = (u32, u32);
 type Line = (Range, Range);
 
-pub fn solve() -> (usize, usize) {
+pub fn solve() -> AOCResult {
     let content = read_file(2022, 4).expect("File input/2022/04.txt to exist");
     let parsed = parse::lines(&content).expect("expected parsing to be successful");
 
-    (silver(&parsed), gold(&parsed))
+    (silver(&parsed), gold(&parsed)).into()
 }
 
 fn silver(lines: &[Line]) -> usize {

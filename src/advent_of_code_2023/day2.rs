@@ -1,13 +1,16 @@
+use crate::aoc_result::AOCResult;
 use crate::read_file::read_file;
 
-pub fn solve() -> (u32, u32) {
+pub fn solve() -> AOCResult {
     let content = read_file(2023, 2).expect("File input/2023/02.txt to exist");
     let parsed = content.lines().map(parse::line).map(Option::unwrap);
 
-    (silver(parsed.clone()), gold(parsed))
+    (silver(parsed.clone()), gold(parsed)).into()
 }
 
-fn silver(lines: impl Iterator<Item = (u8, Line)>) -> u32 {
+type LineInfo = (u8, Line);
+
+fn silver(lines: impl Iterator<Item = LineInfo>) -> u32 {
     const ESTIMATED_BAG: Line = Line::rgb(12, 13, 14);
 
     lines.fold(0, |acc, (game_id, line)| {
@@ -19,11 +22,8 @@ fn silver(lines: impl Iterator<Item = (u8, Line)>) -> u32 {
     })
 }
 
-fn gold(lines: impl Iterator<Item = (u8, Line)>) -> u32 {
-    lines
-        .map(|(_, line)| line)
-        .map(Line::gold)
-        .fold(0, |acc, elem| acc + elem)
+fn gold(lines: impl Iterator<Item = LineInfo>) -> u32 {
+    lines.map(|(_, line)| line).map(Line::gold).sum()
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, PartialOrd, Eq)]
@@ -42,7 +42,7 @@ impl Line {
         }
     }
 
-    const fn game_is_possible_with(self, bag: Line) -> bool {
+    const fn game_is_possible_with(self, bag: Self) -> bool {
         self.red <= bag.red && self.green <= bag.green && self.blue <= bag.blue
     }
 
@@ -94,7 +94,7 @@ mod parse {
 
 #[cfg(test)]
 mod test {
-    use super::{gold, parse::line, silver, Line};
+    use super::{gold, parse::line, silver, Line, LineInfo};
 
     const INPUT: &str = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
 Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
@@ -130,7 +130,7 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
         assert_eq!(gold(lines), 2286);
     }
 
-    fn test_parse() -> impl Iterator<Item = (u8, Line)> {
+    fn test_parse() -> impl Iterator<Item = LineInfo> {
         INPUT.lines().map(line).map(Option::unwrap)
     }
 }

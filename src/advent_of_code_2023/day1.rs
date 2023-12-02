@@ -1,12 +1,13 @@
+use crate::aoc_result::AOCResult;
 use crate::read_file::read_file;
 
-pub fn solve() -> (u32, u32) {
+pub fn solve() -> AOCResult {
     let content = read_file(2023, 1).expect("File input/2023/01.txt to exist");
 
     let silver = parse::lines(&content, &parse::silver_parser);
     let gold = parse::lines(&content, &parse::gold_parser);
 
-    (sum(silver), sum(gold))
+    (sum(silver), sum(gold)).into()
 }
 
 fn sum(lines: impl Iterator<Item = LineInfo>) -> u32 {
