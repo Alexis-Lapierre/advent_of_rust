@@ -9,7 +9,10 @@ pub fn solve() -> AOCResult {
 }
 
 fn silver(input: &Input) -> u32 {
-    todo!()
+    input
+        .part_numbers_next_to_symbol()
+        .map(|part| u32::from(part.value))
+        .sum()
 }
 
 fn gold(input: &Input) -> u32 {
@@ -19,12 +22,12 @@ fn gold(input: &Input) -> u32 {
 #[derive(Debug, PartialEq, Default)]
 struct Input {
     parts: Vec<PartNumber>,
-    symbol: Vec<Point>,
+    symbols: Vec<Point>,
 }
 
 impl Input {
     fn add_symbol(&mut self, position: Point) {
-        self.symbol.push(position);
+        self.symbols.push(position);
     }
 
     fn add_part(&mut self, part_number_to_parse: &str, start_position: Point) {
@@ -35,6 +38,12 @@ impl Input {
             length,
             value,
         });
+    }
+
+    fn part_numbers_next_to_symbol(&self) -> impl Iterator<Item = &PartNumber> {
+        self.parts
+            .iter()
+            .filter(|part| part.is_next_to(&self.symbols))
     }
 }
 
@@ -53,6 +62,12 @@ impl Point {
     fn move_right(&mut self, count: u8) {
         self.x += count;
     }
+
+    fn next_to_with_additional_x_length(&self, additional_x_lenght: u8, other: &Point) -> bool {
+        let next_to_x = self.x.saturating_sub(1)..=self.x.saturating_add(additional_x_lenght);
+        let next_to_y = self.y.saturating_sub(1)..=self.y.saturating_add(1);
+        next_to_x.contains(&other.x) && next_to_y.contains(&other.y)
+    }
 }
 
 impl From<(u8, u8)> for Point {
@@ -67,6 +82,15 @@ struct PartNumber {
     start_position: Point,
     length: u8,
     value: u16,
+}
+
+impl PartNumber {
+    fn is_next_to(&self, symbols: &[Point]) -> bool {
+        symbols.iter().any(|symbol| {
+            self.start_position
+                .next_to_with_additional_x_length(self.length, symbol)
+        })
+    }
 }
 
 impl From<(u8, u8, u8, u16)> for PartNumber {
@@ -92,36 +116,35 @@ mod parse {
     fn parse_internal(lines: &str) -> IResult<&str, Input> {
         let (lines, (input, _)) = nom::multi::fold_many1(
             nom::branch::alt((
-                nom::bytes::complete::tag("#"),
-                nom::bytes::complete::tag("*"),
-                nom::bytes::complete::tag("+"),
-                nom::bytes::complete::tag("."),
-                nom::bytes::complete::tag("$"),
-                nom::bytes::complete::tag("\n"),
                 nom::character::complete::digit1,
+                nom::bytes::complete::take(1_usize),
             )),
             || (Input::default(), Point::default()),
             |(mut input, mut point), captured: &str| {
                 if captured == "\n" {
                     point.new_line();
                 } else {
-                    match captured {
-                        "*" | "#" | "+" | "$" => input.add_symbol(point),
-                        "." => (),
-                        number => input.add_part(number, point),
-                    };
+                    match captured.chars().next().unwrap() {
+                        '0'..='9' => input.add_part(captured, point),
+                        '.' => (),
+                        _symbol => input.add_symbol(point),
+                    }
                     point.move_right(u8::try_from(captured.len()).unwrap())
                 }
                 (input, point)
             },
         )(lines)?;
 
-        Ok((dbg!(lines), input))
+        if lines.len() != 0 {
+            println!("Warning! Not all the input was eaten!\n{lines}");
+        }
+
+        Ok((lines, input))
     }
 }
 
 mod test {
-    use super::{parse, Input, PartNumber, Point};
+    use super::{parse, silver, Input, PartNumber, Point};
 
     const INPUT: &str = "467..114..
 ...*......
@@ -150,7 +173,7 @@ mod test {
         assert_eq!(parts.next(), Some((5, 9, 3, 598).into()).as_ref());
 
         assert_eq!(
-            parsed.symbol,
+            parsed.symbols,
             vec![
                 Point { x: 3, y: 1 },
                 Point { x: 6, y: 3 },
@@ -160,5 +183,11 @@ mod test {
                 Point { x: 5, y: 8 }
             ],
         );
+    }
+
+    #[test]
+    fn test_silver() {
+        let parsed = parse::parse(INPUT).unwrap();
+        assert_eq!(silver(&parsed), 4361);
     }
 }
