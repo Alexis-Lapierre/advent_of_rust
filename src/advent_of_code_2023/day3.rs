@@ -16,7 +16,7 @@ fn silver(input: &Input) -> u32 {
 }
 
 fn gold(input: &Input) -> u32 {
-    0
+    input.gear_ratio_per_symbol().sum()
 }
 
 #[derive(Debug, PartialEq, Default)]
@@ -43,7 +43,21 @@ impl Input {
     fn part_numbers_next_to_symbol(&self) -> impl Iterator<Item = &PartNumber> {
         self.parts
             .iter()
-            .filter(|part| part.is_next_to(&self.symbols))
+            .filter(|part| part.is_next_to_any_symbols(&self.symbols))
+    }
+
+    fn gear_ratio_per_symbol(&self) -> impl Iterator<Item = u32> + '_ {
+        self.symbols
+            .iter()
+            .map(|symbol| {
+                self.parts
+                    .iter()
+                    .filter(|part| part.is_next_to(symbol))
+                    .map(|part| u32::from(part.value))
+                    .collect::<Vec<_>>()
+            })
+            .filter(|gears| gears.len() == 2)
+            .map(|gears| gears[0] * gears[1])
     }
 }
 
@@ -85,11 +99,13 @@ struct PartNumber {
 }
 
 impl PartNumber {
-    fn is_next_to(&self, symbols: &[Point]) -> bool {
-        symbols.iter().any(|symbol| {
-            self.start_position
-                .next_to_with_additional_x_length(self.length, symbol)
-        })
+    fn is_next_to(&self, symbol: &Point) -> bool {
+        self.start_position
+            .next_to_with_additional_x_length(self.length, symbol)
+    }
+
+    fn is_next_to_any_symbols(&self, symbols: &[Point]) -> bool {
+        symbols.iter().any(|symbol| self.is_next_to(symbol))
     }
 }
 
@@ -144,7 +160,7 @@ mod parse {
 }
 
 mod test {
-    use super::{parse, silver, Input, PartNumber, Point};
+    use super::{gold, parse, silver, Input, PartNumber, Point};
 
     const INPUT: &str = "467..114..
 ...*......
@@ -189,5 +205,11 @@ mod test {
     fn test_silver() {
         let parsed = parse::parse(INPUT).unwrap();
         assert_eq!(silver(&parsed), 4361);
+    }
+
+    #[test]
+    fn test_gold() {
+        let parsed = parse::parse(INPUT).unwrap();
+        assert_eq!(gold(&parsed), 467835);
     }
 }
