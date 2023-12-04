@@ -115,7 +115,7 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
                 (4, Line::rgb(14, 3, 15)),
                 (5, Line::rgb(6, 3, 2)),
             ]
-        )
+        );
     }
 
     #[test]

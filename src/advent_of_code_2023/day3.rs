@@ -52,7 +52,7 @@ impl Input {
             .map(|symbol| {
                 self.parts
                     .iter()
-                    .filter(|part| part.is_next_to(symbol))
+                    .filter(|part| part.is_next_to(*symbol))
                     .map(|part| u32::from(part.value))
                     .collect::<Vec<_>>()
             })
@@ -77,7 +77,7 @@ impl Point {
         self.x += count;
     }
 
-    fn next_to_with_additional_x_length(&self, additional_x_lenght: u8, other: &Point) -> bool {
+    fn next_to_with_additional_x_length(self, additional_x_lenght: u8, other: Point) -> bool {
         let next_to_x = self.x.saturating_sub(1)..=self.x.saturating_add(additional_x_lenght);
         let next_to_y = self.y.saturating_sub(1)..=self.y.saturating_add(1);
         next_to_x.contains(&other.x) && next_to_y.contains(&other.y)
@@ -99,13 +99,13 @@ struct PartNumber {
 }
 
 impl PartNumber {
-    fn is_next_to(&self, symbol: &Point) -> bool {
+    fn is_next_to(&self, symbol: Point) -> bool {
         self.start_position
             .next_to_with_additional_x_length(self.length, symbol)
     }
 
     fn is_next_to_any_symbols(&self, symbols: &[Point]) -> bool {
-        symbols.iter().any(|symbol| self.is_next_to(symbol))
+        symbols.iter().any(|symbol| self.is_next_to(*symbol))
     }
 }
 
@@ -145,13 +145,13 @@ mod parse {
                         '.' => (),
                         _symbol => input.add_symbol(point),
                     }
-                    point.move_right(u8::try_from(captured.len()).unwrap())
+                    point.move_right(u8::try_from(captured.len()).unwrap());
                 }
                 (input, point)
             },
         )(lines)?;
 
-        if lines.len() != 0 {
+        if !lines.is_empty() {
             println!("Warning! Not all the input was eaten!\n{lines}");
         }
 
@@ -159,8 +159,9 @@ mod parse {
     }
 }
 
+#[cfg(test)]
 mod test {
-    use super::{gold, parse, silver, Input, PartNumber, Point};
+    use super::{gold, parse, silver, Point};
 
     const INPUT: &str = "467..114..
 ...*......
@@ -210,6 +211,6 @@ mod test {
     #[test]
     fn test_gold() {
         let parsed = parse::parse(INPUT).unwrap();
-        assert_eq!(gold(&parsed), 467835);
+        assert_eq!(gold(&parsed), 467_835);
     }
 }
