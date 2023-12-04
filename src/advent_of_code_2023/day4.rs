@@ -5,10 +5,10 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 pub fn solve() -> AOCResult {
     let input = read_file(2023, 4).expect("File input/2023/04.txt to exist");
     let parsed: Vec<_> = parse::parse(&input).collect();
-    (silver(parsed.iter().cloned()), gold(parsed.iter().cloned())).into()
+    (silver(parsed.iter().copied()), gold(parsed.iter().copied())).into()
 }
 
-fn silver<'a>(lines: impl Iterator<Item = Line>) -> u32 {
+fn silver(lines: impl Iterator<Item = Line>) -> u32 {
     lines.map(silver_line).sum()
 }
 
@@ -21,7 +21,7 @@ fn silver_line(line: Line) -> u32 {
     }
 }
 
-fn gold<'a>(lines: impl Iterator<Item = Line>) -> u32 {
+fn gold(lines: impl Iterator<Item = Line>) -> u32 {
     let number_of_cards = VecDeque::new();
     gold_recursive(lines, number_of_cards)
 }
@@ -65,8 +65,6 @@ impl From<RawParsedLine> for Line {
 }
 
 mod parse {
-    use std::collections::HashSet;
-
     use nom::{bytes::complete::tag, character::complete::space1};
 
     use super::{Line, RawParsedLine};
@@ -96,8 +94,8 @@ mod parse {
             input,
             RawParsedLine {
                 card,
-                lucky: HashSet::from_iter(lucky.iter().cloned()),
-                winning: HashSet::from_iter(winning.iter().cloned()),
+                lucky: lucky.iter().copied().collect(),
+                winning: winning.iter().copied().collect(),
             }
             .into(),
         ))
