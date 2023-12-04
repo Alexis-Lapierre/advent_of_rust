@@ -22,25 +22,24 @@ fn silver_line(line: Line) -> u32 {
 }
 
 fn gold(lines: impl Iterator<Item = Line>) -> u32 {
-    let number_of_cards = VecDeque::new();
-    gold_recursive(lines, number_of_cards)
-}
+    let mut next_cards = VecDeque::new();
 
-fn gold_recursive(mut lines: impl Iterator<Item = Line>, mut cards_queue: VecDeque<u32>) -> u32 {
-    if let Some(line) = lines.next() {
-        let current_cards = cards_queue.pop_front().unwrap_or(1);
-        let wins = usize::from(line.winning_numbers_count);
-        while cards_queue.len() < wins {
-            cards_queue.push_back(1);
-        }
-        for card in cards_queue.range_mut(..wins) {
-            *card += current_cards;
-        }
+    lines
+        .map(|line| line.winning_numbers_count)
+        .map(usize::from)
+        .fold(0, |acc, wins| {
+            let current_cards = next_cards.pop_front().unwrap_or(1);
 
-        current_cards + gold_recursive(lines, cards_queue)
-    } else {
-        0
-    }
+            while next_cards.len() < wins {
+                next_cards.push_back(1);
+            }
+
+            for card in next_cards.range_mut(..wins) {
+                *card += current_cards;
+            }
+
+            acc + current_cards
+        })
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
