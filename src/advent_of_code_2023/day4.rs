@@ -4,8 +4,8 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 
 pub fn solve() -> AOCResult {
     let input = read_file(2023, 4).expect("File input/2023/04.txt to exist");
-    let mut parsed: Vec<_> = parse::parse(&input).collect();
-    (silver(parsed.iter().copied()), gold(parsed.drain(..))).into()
+    let parsed: Vec<_> = parse::parse(&input).collect();
+    (silver(parsed.iter().copied()), gold(parsed.into_iter())).into()
 }
 
 fn silver(lines: impl Iterator<Item = Line>) -> u32 {

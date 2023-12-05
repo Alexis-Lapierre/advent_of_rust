@@ -38,16 +38,12 @@ fn gold(input: &Input) -> i64 {
 
     for tested_value in 1.. {
         let input_key = gold_solve_part(&input.rules, tested_value);
-        if seeds
-            .iter()
-            .find(|seed| seed.contains(&input_key))
-            .is_some()
-        {
+        if seeds.iter().any(|seed| seed.contains(&input_key)) {
             return tested_value;
         }
     }
 
-    return i64::MAX;
+    i64::MAX
 }
 
 fn gold_solve_part(rules: &[Rule], terrain: i64) -> i64 {
@@ -113,7 +109,7 @@ impl Translation {
 }
 
 fn parse(input: &str) -> Input {
-    parse::parse_internal(input).unwrap().1
+    parse::file(input).unwrap().1
 }
 
 mod parse {
@@ -121,7 +117,7 @@ mod parse {
 
     use super::{Input, Rule, Translation};
 
-    pub fn parse_internal(input: &str) -> IResult<&str, Input> {
+    pub fn file(input: &str) -> IResult<&str, Input> {
         let (input, _) = nom::bytes::complete::tag("seeds: ")(input)?;
         let (input, seeds) = nom::multi::separated_list1(
             nom::character::complete::space1,

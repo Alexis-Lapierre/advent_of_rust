@@ -77,7 +77,7 @@ impl Point {
         self.x += count;
     }
 
-    fn next_to_with_additional_x_length(self, additional_x_lenght: u8, other: Point) -> bool {
+    fn next_to_with_additional_x_length(self, additional_x_lenght: u8, other: Self) -> bool {
         let next_to_x = self.x.saturating_sub(1)..=self.x.saturating_add(additional_x_lenght);
         let next_to_y = self.y.saturating_sub(1)..=self.y.saturating_add(1);
         next_to_x.contains(&other.x) && next_to_y.contains(&other.y)
