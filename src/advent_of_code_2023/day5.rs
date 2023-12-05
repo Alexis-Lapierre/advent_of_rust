@@ -23,28 +23,38 @@ fn silver(input: &Input) -> i64 {
 }
 
 fn gold(input: &Input) -> i64 {
-    let (min, _): (i64, Option<i64>) =
+    let (seeds, _) =
         input
             .seeds
             .iter()
-            .fold((i64::MAX, None), |(acc, maybe_previous), cur| {
+            .fold((Vec::new(), None), |(mut acc, maybe_previous), cur| {
                 if let Some(previous) = maybe_previous {
-                    let seed_range_min = (previous..=(previous + cur))
-                        .map(|seed| gold_solve_part(&input.rules, seed))
-                        .min()
-                        .unwrap_or(i64::MAX);
-
-                    (std::cmp::min(acc, seed_range_min), None)
+                    acc.push(previous..=(previous + cur));
+                    (acc, None)
                 } else {
                     (acc, Some(*cur))
                 }
             });
 
-    min
+    for tested_value in 1.. {
+        let input_key = gold_solve_part(&input.rules, tested_value);
+        if seeds
+            .iter()
+            .find(|seed| seed.contains(&input_key))
+            .is_some()
+        {
+            return tested_value;
+        }
+    }
+
+    return i64::MAX;
 }
 
-fn gold_solve_part(rules: &[Rule], seed: i64) -> i64 {
-    rules.iter().fold(seed, |origin, rule| rule.apply(origin))
+fn gold_solve_part(rules: &[Rule], terrain: i64) -> i64 {
+    rules
+        .iter()
+        .rev()
+        .fold(terrain, |origin, rule| rule.rev_apply(origin))
 }
 
 struct Input {
@@ -63,6 +73,13 @@ impl Rule {
             .find_map(|translation| translation.apply_translation(origin))
             .unwrap_or(origin)
     }
+
+    fn rev_apply(&self, terrain: i64) -> i64 {
+        self.ranges
+            .iter()
+            .find_map(|translation| translation.rev_translation(terrain))
+            .unwrap_or(terrain)
+    }
 }
 
 impl From<Vec<Translation>> for Rule {
@@ -73,6 +90,7 @@ impl From<Vec<Translation>> for Rule {
 
 struct Translation {
     source_range: RangeInclusive<i64>,
+    destination_range: RangeInclusive<i64>,
     source_to_destination_offset: i64,
 }
 
@@ -80,6 +98,14 @@ impl Translation {
     fn apply_translation(&self, to_translate: i64) -> Option<i64> {
         if self.source_range.contains(&to_translate) {
             Some(to_translate + self.source_to_destination_offset)
+        } else {
+            None
+        }
+    }
+
+    fn rev_translation(&self, to_reverse: i64) -> Option<i64> {
+        if self.destination_range.contains(&to_reverse) {
+            Some(to_reverse - self.source_to_destination_offset)
         } else {
             None
         }
@@ -126,6 +152,8 @@ mod parse {
 
                         acc.push(Translation {
                             source_range: source_range_start..=source_range_start + range_length,
+                            destination_range: destination_range_start
+                                ..=destination_range_start + range_length,
                             source_to_destination_offset: destination_range_start
                                 - source_range_start,
                         });
