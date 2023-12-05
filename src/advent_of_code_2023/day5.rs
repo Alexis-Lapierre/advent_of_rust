@@ -5,7 +5,7 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 pub fn solve() -> AOCResult {
     let input = read_file(2023, 5).expect("File input/2023/05.txt to exist");
     let parsed = parse(&input);
-    (silver(&parsed), 0).into()
+    (silver(&parsed), gold(&parsed)).into()
 }
 
 fn silver(input: &Input) -> i64 {
@@ -20,6 +20,31 @@ fn silver(input: &Input) -> i64 {
         })
         .min()
         .unwrap_or(i64::MAX)
+}
+
+fn gold(input: &Input) -> i64 {
+    let (min, _): (i64, Option<i64>) =
+        input
+            .seeds
+            .iter()
+            .fold((i64::MAX, None), |(acc, maybe_previous), cur| {
+                if let Some(previous) = maybe_previous {
+                    let seed_range_min = (previous..=(previous + cur))
+                        .map(|seed| gold_solve_part(&input.rules, seed))
+                        .min()
+                        .unwrap_or(i64::MAX);
+
+                    (std::cmp::min(acc, seed_range_min), None)
+                } else {
+                    (acc, Some(*cur))
+                }
+            });
+
+    min
+}
+
+fn gold_solve_part(rules: &[Rule], seed: i64) -> i64 {
+    rules.iter().fold(seed, |origin, rule| rule.apply(origin))
 }
 
 struct Input {
@@ -122,7 +147,7 @@ mod parse {
 
 #[cfg(test)]
 mod test {
-    use super::{parse, silver};
+    use super::{gold, parse, silver};
 
     const INPUT: &str = "seeds: 79 14 55 13
 
@@ -161,5 +186,11 @@ humidity-to-location map:
     fn test_silver() {
         let parsed = parse(INPUT);
         assert_eq!(silver(&parsed), 35);
+    }
+
+    #[test]
+    fn test_gold() {
+        let parsed = parse(INPUT);
+        assert_eq!(gold(&parsed), 46);
     }
 }
