@@ -15,19 +15,19 @@ fn nbr_possibility_beat_record(race: &Race) -> f64 {
 
     // don't really know how to avoid precision loss, but should not impact regular aoc input
     #[allow(clippy::cast_precision_loss)]
-    let minimum_distance = (race.minimum_distance + 1) as f64;
+    let distance_record = (race.distance_record + 1) as f64;
 
-    let root = 4_f64.mul_add(-minimum_distance, time.powi(2)).sqrt();
+    let root = 4_f64.mul_add(-distance_record, time.powi(2)).sqrt();
     let lower = ((time - root) / 2.).ceil();
     let upper = ((time + root) / 2.).floor();
 
-    (upper - lower) + 1.
+    upper - lower + 1.
 }
 
 #[derive(Debug, PartialEq, Eq)]
 struct Race {
     time: u32,
-    minimum_distance: u64,
+    distance_record: u64,
 }
 
 mod parse {
@@ -64,7 +64,7 @@ mod parse {
                     let time = times.next().unwrap();
                     acc.push(Race {
                         time,
-                        minimum_distance: distance,
+                        distance_record: distance,
                     });
                     acc
                 },
@@ -74,24 +74,21 @@ mod parse {
         let gold_race = silver_races.iter().fold(
             Race {
                 time: 0,
-                minimum_distance: 0,
+                distance_record: 0,
             },
             |mut gold_race, race| {
                 gold_race.time = gold_race.time * 100 + race.time;
 
-                let multiplier = match race.minimum_distance {
+                let multiplier = match race.distance_record {
                     0..=9 => 10,
                     10..=99 => 100,
                     100..=999 => 1000,
                     1000..=9_999 => 10_000,
-                    _ => panic!(
-                        "Unexpected time over 10_000 (got {})",
-                        race.minimum_distance
-                    ),
+                    _ => panic!("Unexpected time over 10_000 (got {})", race.distance_record),
                 };
 
-                gold_race.minimum_distance =
-                    gold_race.minimum_distance * multiplier + race.minimum_distance;
+                gold_race.distance_record =
+                    gold_race.distance_record * multiplier + race.distance_record;
 
                 gold_race
             },
@@ -117,15 +114,15 @@ Distance:  9  40  200";
             [
                 Race {
                     time: 7,
-                    minimum_distance: 9
+                    distance_record: 9
                 },
                 Race {
                     time: 15,
-                    minimum_distance: 40
+                    distance_record: 40
                 },
                 Race {
                     time: 30,
-                    minimum_distance: 200
+                    distance_record: 200
                 },
             ]
         );
@@ -133,7 +130,7 @@ Distance:  9  40  200";
             gold,
             Race {
                 time: 71530,
-                minimum_distance: 940_200
+                distance_record: 940_200
             },
         );
     }
