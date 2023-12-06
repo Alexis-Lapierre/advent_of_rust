@@ -7,16 +7,12 @@ pub fn solve() -> AOCResult {
 }
 
 fn silver(races: &[Race]) -> usize {
-    races
-        .iter()
-        .map(nbr_possibility_beat_record)
-        .fold(1, |acc, elem| acc * elem)
+    races.iter().map(nbr_possibility_beat_record).product()
 }
 
 fn nbr_possibility_beat_record(race: &Race) -> usize {
     // 0 is never going to win, and it's not 1..=race.time is also not going to win.
     (1..race.time)
-        .into_iter()
         .filter(|button_pressed_for| {
             let speed = u64::from(*button_pressed_for);
             let remaining_time = u64::from(race.time) - speed;
@@ -132,7 +128,7 @@ Distance:  9  40  200";
             gold,
             Race {
                 time: 71530,
-                record_distance: 940200
+                record_distance: 940_200
             },
         );
     }
