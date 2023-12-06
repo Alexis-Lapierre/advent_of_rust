@@ -12,8 +12,12 @@ fn silver(races: &[Race]) -> f64 {
 
 fn nbr_possibility_beat_record(race: &Race) -> f64 {
     let time = f64::from(race.time);
+
+    // don't really know how to avoid precision loss, but should not impact regular aoc input
+    #[allow(clippy::cast_precision_loss)]
     let minimum_distance = (race.minimum_distance + 1) as f64;
-    let root = ((time).powi(2) - (4. * minimum_distance)).powf(0.5);
+
+    let root = 4_f64.mul_add(-minimum_distance, time.powi(2)).sqrt();
     let lower = ((time - root) / 2.).ceil();
     let upper = ((time + root) / 2.).floor();
 
