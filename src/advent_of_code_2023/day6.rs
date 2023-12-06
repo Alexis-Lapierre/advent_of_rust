@@ -6,26 +6,24 @@ pub fn solve() -> AOCResult {
     (silver(&silver_input), nbr_possibility_beat_record(&gold)).into()
 }
 
-fn silver(races: &[Race]) -> usize {
+fn silver(races: &[Race]) -> f64 {
     races.iter().map(nbr_possibility_beat_record).product()
 }
 
-fn nbr_possibility_beat_record(race: &Race) -> usize {
-    // 0 is never going to win, and it's not 1..=race.time is also not going to win.
-    (1..race.time)
-        .filter(|button_pressed_for| {
-            let speed = u64::from(*button_pressed_for);
-            let remaining_time = u64::from(race.time) - speed;
+fn nbr_possibility_beat_record(race: &Race) -> f64 {
+    let time = f64::from(race.time);
+    let minimum_distance = (race.minimum_distance + 1) as f64;
+    let root = ((time).powi(2) - (4. * minimum_distance)).powf(0.5);
+    let lower = ((time - root) / 2.).ceil();
+    let upper = ((time + root) / 2.).floor();
 
-            speed * remaining_time > race.record_distance
-        })
-        .count()
+    (upper - lower) + 1.
 }
 
 #[derive(Debug, PartialEq, Eq)]
 struct Race {
     time: u32,
-    record_distance: u64,
+    minimum_distance: u64,
 }
 
 mod parse {
@@ -62,7 +60,7 @@ mod parse {
                     let time = times.next().unwrap();
                     acc.push(Race {
                         time,
-                        record_distance: distance,
+                        minimum_distance: distance,
                     });
                     acc
                 },
@@ -72,21 +70,24 @@ mod parse {
         let gold_race = silver_races.iter().fold(
             Race {
                 time: 0,
-                record_distance: 0,
+                minimum_distance: 0,
             },
             |mut gold_race, race| {
                 gold_race.time = gold_race.time * 100 + race.time;
 
-                let multiplier = match race.record_distance {
+                let multiplier = match race.minimum_distance {
                     0..=9 => 10,
                     10..=99 => 100,
                     100..=999 => 1000,
                     1000..=9_999 => 10_000,
-                    _ => panic!("Unexpected time over 10_000 (got {})", race.record_distance),
+                    _ => panic!(
+                        "Unexpected time over 10_000 (got {})",
+                        race.minimum_distance
+                    ),
                 };
 
-                gold_race.record_distance =
-                    gold_race.record_distance * multiplier + race.record_distance;
+                gold_race.minimum_distance =
+                    gold_race.minimum_distance * multiplier + race.minimum_distance;
 
                 gold_race
             },
@@ -98,7 +99,7 @@ mod parse {
 
 #[cfg(test)]
 mod test {
-    use super::{parse::parse, silver, Race};
+    use super::{nbr_possibility_beat_record, parse::parse, silver, Race};
 
     const INPUT: &str = "Time:      7  15   30
 Distance:  9  40  200";
@@ -112,15 +113,15 @@ Distance:  9  40  200";
             [
                 Race {
                     time: 7,
-                    record_distance: 9
+                    minimum_distance: 9
                 },
                 Race {
                     time: 15,
-                    record_distance: 40
+                    minimum_distance: 40
                 },
                 Race {
                     time: 30,
-                    record_distance: 200
+                    minimum_distance: 200
                 },
             ]
         );
@@ -128,14 +129,20 @@ Distance:  9  40  200";
             gold,
             Race {
                 time: 71530,
-                record_distance: 940_200
+                minimum_distance: 940_200
             },
         );
     }
 
     #[test]
     fn test_silver() {
-        let (parsed, _) = parse(INPUT);
-        assert_eq!(silver(&parsed), 288);
+        let (parsed, gold_parsed) = parse(INPUT);
+        assert_eq!(nbr_possibility_beat_record(&gold_parsed), 71503.);
+        let mut silver_iter = parsed.iter().map(nbr_possibility_beat_record);
+        assert_eq!(silver_iter.next(), Some(4.));
+        assert_eq!(silver_iter.next(), Some(8.));
+        assert_eq!(silver_iter.next(), Some(9.));
+        assert_eq!(silver_iter.next(), None);
+        assert_eq!(silver(&parsed), 288.);
     }
 }
