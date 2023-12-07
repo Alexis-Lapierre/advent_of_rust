@@ -13,7 +13,7 @@ fn silver(lines: &mut [Line]) -> u32 {
     lines.sort_unstable_by(|line, other| Hand::cmp(&line.hand.0, &other.hand.0));
 
     lines
-        .into_iter()
+        .iter()
         .zip(1..)
         .map(|(line, index)| line.bid * index)
         .sum()
@@ -23,7 +23,7 @@ fn gold(lines: &mut [Line]) -> u32 {
     lines.sort_unstable_by(|line, other| Hand::cmp(&line.hand.1, &other.hand.1));
 
     lines
-        .into_iter()
+        .iter()
         .zip(1..)
         .map(|(line, index)| line.bid * index)
         .sum()
@@ -192,7 +192,7 @@ struct Line {
 mod parse {
     use nom::IResult;
 
-    use super::{Card, Hand, HandType, Line};
+    use super::{Card, Line};
     pub fn parse(input: &str) -> Vec<Line> {
         internal(input).unwrap().1
     }
