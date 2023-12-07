@@ -50,7 +50,7 @@ impl From<Card> for u8 {
             Card::Ace => 14,
             Card::King => 13,
             Card::Queen => 12,
-            Card::Jack => 11,
+            Card::Jack => 0,
             Card::Number(n) => n,
         }
     }
@@ -83,8 +83,9 @@ impl From<&[Card; 5]> for HandType {
             map.entry(*card).and_modify(|n| *n += 1).or_insert(1);
         }
 
+        let jacks = map.remove(&Card::Jack).unwrap_or(0);
         let mut iter = map.into_values().sorted().rev();
-        let best = iter.next().unwrap();
+        let best = iter.next().unwrap_or(0) + jacks;
         let second_best = iter.next().unwrap_or(0);
 
         match (best, second_best) {
