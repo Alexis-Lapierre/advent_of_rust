@@ -6,11 +6,21 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 pub fn solve() -> AOCResult {
     let input = read_file(2023, 7).expect("File input/2023/06.txt to exist");
     let mut parsed = parse::parse(&input);
-    (silver(&mut parsed), 0).into()
+    (silver(&mut parsed), gold(&mut parsed)).into()
 }
 
 fn silver(lines: &mut [Line]) -> u32 {
-    lines.sort_unstable_by(|line, other| Hand::cmp(&line.hand, &other.hand));
+    lines.sort_unstable_by(|line, other| Hand::cmp(&line.hand.0, &other.hand.0));
+
+    lines
+        .into_iter()
+        .zip(1..)
+        .map(|(line, index)| line.bid * index)
+        .sum()
+}
+
+fn gold(lines: &mut [Line]) -> u32 {
+    lines.sort_unstable_by(|line, other| Hand::cmp(&line.hand.1, &other.hand.1));
 
     lines
         .into_iter()
@@ -143,9 +153,17 @@ impl From<HandType> for u8 {
 
 #[derive(Debug, PartialEq, Eq)]
 struct Hand {
-    silver_hand_type: HandType,
-    gold_hand_type: HandType,
+    hand_type: HandType,
     cards: Vec<Card>,
+}
+
+impl From<Vec<Card>> for Hand {
+    fn from(cards: Vec<Card>) -> Self {
+        Self {
+            hand_type: HandType::from(cards.iter().copied()),
+            cards,
+        }
+    }
 }
 
 impl PartialOrd for Hand {
@@ -155,7 +173,7 @@ impl PartialOrd for Hand {
 }
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.silver_hand_type.cmp(&other.silver_hand_type) {
+        match self.hand_type.cmp(&other.hand_type) {
             Ordering::Equal => match self.cards.cmp(&other.cards) {
                 Ordering::Equal => panic!("Two Hands are perfectly equal, should not append!"),
                 ord => ord,
@@ -167,7 +185,7 @@ impl Ord for Hand {
 
 #[derive(Debug)]
 struct Line {
-    hand: Hand,
+    hand: (Hand, Hand),
     bid: u32,
 }
 
@@ -190,21 +208,19 @@ mod parse {
             nom::character::complete::u32,
         )(input)?;
 
-        let cards = cards
+        let silver_cards = cards
             .as_bytes()
             .iter()
             .map(|card| Card::try_from(*card))
             .map(Result::unwrap)
             .collect::<Vec<_>>();
 
+        let gold_cards: Vec<_> = silver_cards.iter().map(|card| card.into_gold()).collect();
+
         Ok((
             input,
             Line {
-                hand: Hand {
-                    silver_hand_type: HandType::from(cards.iter().copied()),
-                    gold_hand_type: HandType::from(cards.iter().map(|card| card.into_gold())),
-                    cards,
-                },
+                hand: (silver_cards.into(), gold_cards.into()),
                 bid,
             },
         ))
@@ -213,7 +229,7 @@ mod parse {
 
 #[cfg(test)]
 mod test {
-    use super::{parse::parse, silver, HandType};
+    use super::{gold, parse::parse, silver, HandType};
 
     const INPUT: &str = "32T3K 765
 T55J5 684
@@ -223,9 +239,7 @@ QQQJA 483";
 
     #[test]
     fn test_parse() {
-        let mut parsed = parse(INPUT)
-            .into_iter()
-            .map(|line| line.hand.silver_hand_type);
+        let mut parsed = parse(INPUT).into_iter().map(|line| line.hand.0.hand_type);
         assert_eq!(parsed.next(), Some(HandType::OnePair));
         assert_eq!(parsed.next(), Some(HandType::ThreeOfAKind));
         assert_eq!(parsed.next(), Some(HandType::TwoPair));
@@ -238,5 +252,10 @@ QQQJA 483";
     fn test_silver() {
         let mut parsed = parse(INPUT);
         assert_eq!(silver(&mut parsed), 6440);
+    }
+    #[test]
+    fn test_gold() {
+        let mut parsed = parse(INPUT);
+        assert_eq!(gold(&mut parsed), 5905);
     }
 }
