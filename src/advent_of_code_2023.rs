@@ -6,6 +6,7 @@ mod day3;
 mod day4;
 mod day5;
 mod day6;
+mod day7;
 
 pub fn advent_of_code_2023(day: u8) -> AOCResult {
     match day {
@@ -15,6 +16,7 @@ pub fn advent_of_code_2023(day: u8) -> AOCResult {
         4 => day4::solve(),
         5 => day5::solve(),
         6 => day6::solve(),
+        7 => day7::solve(),
         _ => todo!(),
     }
 }
