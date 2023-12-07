@@ -26,6 +26,7 @@ enum Card {
     Queen,
     Jack,
     Number(u8),
+    Jocker,
 }
 
 impl TryFrom<u8> for Card {
@@ -50,11 +51,13 @@ impl From<Card> for u8 {
             Card::Ace => 14,
             Card::King => 13,
             Card::Queen => 12,
-            Card::Jack => 0,
+            Card::Jack => 11,
             Card::Number(n) => n,
+            Card::Jocker => 0,
         }
     }
 }
+
 impl PartialOrd for Card {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -65,6 +68,16 @@ impl Ord for Card {
         u8::cmp(&u8::from(*self), &u8::from(*other))
     }
 }
+
+impl Card {
+    fn into_gold(self) -> Self {
+        match self {
+            Card::Jack => Card::Jocker,
+            other => other,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum HandType {
     FiveOfAKind,
@@ -76,14 +89,17 @@ enum HandType {
     HighCard,
 }
 
-impl From<&[Card; 5]> for HandType {
-    fn from(cards: &[Card; 5]) -> Self {
+impl<'a, T> From<T> for HandType
+where
+    T: Iterator<Item = &'a Card>,
+{
+    fn from(cards: T) -> Self {
         let mut map: HashMap<Card, u8> = HashMap::new();
-        for card in cards.iter() {
+        for card in cards {
             map.entry(*card).and_modify(|n| *n += 1).or_insert(1);
         }
 
-        let jacks = map.remove(&Card::Jack).unwrap_or(0);
+        let jacks = map.remove(&Card::Jocker).unwrap_or(0);
         let mut iter = map.into_values().sorted().rev();
         let best = iter.next().unwrap_or(0) + jacks;
         let second_best = iter.next().unwrap_or(0);
@@ -128,7 +144,7 @@ impl From<HandType> for u8 {
 #[derive(Debug, PartialEq, Eq)]
 struct Hand {
     hand_type: HandType,
-    cards: [Card; 5],
+    cards: Vec<Card>,
 }
 
 impl PartialOrd for Hand {
@@ -173,20 +189,18 @@ mod parse {
             nom::character::complete::u32,
         )(input)?;
 
-        let cards: [Card; 5] = cards
+        let cards = cards
             .as_bytes()
             .iter()
             .map(|card| Card::try_from(*card))
             .map(Result::unwrap)
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
+            .collect::<Vec<_>>();
 
         Ok((
             input,
             Line {
                 hand: Hand {
-                    hand_type: HandType::from(&cards),
+                    hand_type: HandType::from(cards.iter()),
                     cards,
                 },
                 bid,
