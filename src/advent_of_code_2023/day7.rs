@@ -89,14 +89,14 @@ enum HandType {
     HighCard,
 }
 
-impl<'a, T> From<T> for HandType
+impl<T> From<T> for HandType
 where
-    T: Iterator<Item = &'a Card>,
+    T: Iterator<Item = Card>,
 {
     fn from(cards: T) -> Self {
         let mut map: HashMap<Card, u8> = HashMap::new();
         for card in cards {
-            map.entry(*card).and_modify(|n| *n += 1).or_insert(1);
+            map.entry(card).and_modify(|n| *n += 1).or_insert(1);
         }
 
         let jacks = map.remove(&Card::Jocker).unwrap_or(0);
@@ -143,7 +143,8 @@ impl From<HandType> for u8 {
 
 #[derive(Debug, PartialEq, Eq)]
 struct Hand {
-    hand_type: HandType,
+    silver_hand_type: HandType,
+    gold_hand_type: HandType,
     cards: Vec<Card>,
 }
 
@@ -154,7 +155,7 @@ impl PartialOrd for Hand {
 }
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self.hand_type.cmp(&other.hand_type) {
+        match self.silver_hand_type.cmp(&other.silver_hand_type) {
             Ordering::Equal => match self.cards.cmp(&other.cards) {
                 Ordering::Equal => panic!("Two Hands are perfectly equal, should not append!"),
                 ord => ord,
@@ -200,7 +201,8 @@ mod parse {
             input,
             Line {
                 hand: Hand {
-                    hand_type: HandType::from(cards.iter()),
+                    silver_hand_type: HandType::from(cards.iter().copied()),
+                    gold_hand_type: HandType::from(cards.iter().map(|card| card.into_gold())),
                     cards,
                 },
                 bid,
@@ -221,7 +223,9 @@ QQQJA 483";
 
     #[test]
     fn test_parse() {
-        let mut parsed = parse(INPUT).into_iter().map(|line| line.hand.hand_type);
+        let mut parsed = parse(INPUT)
+            .into_iter()
+            .map(|line| line.hand.silver_hand_type);
         assert_eq!(parsed.next(), Some(HandType::OnePair));
         assert_eq!(parsed.next(), Some(HandType::ThreeOfAKind));
         assert_eq!(parsed.next(), Some(HandType::TwoPair));
