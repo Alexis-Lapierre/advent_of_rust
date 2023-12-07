@@ -34,7 +34,7 @@ struct Race {
 mod parse {
     use nom::IResult;
 
-    use super::Race;
+    use super::{multiplier, Race};
 
     pub fn parse(input: &str) -> (Vec<Race>, Race) {
         parse_internal(input).unwrap().1
@@ -80,13 +80,7 @@ mod parse {
             |mut gold_race, race| {
                 gold_race.time = gold_race.time * 100 + race.time;
 
-                let multiplier = match race.distance_record {
-                    0..=9 => 10,
-                    10..=99 => 100,
-                    100..=999 => 1000,
-                    1000..=9_999 => 10_000,
-                    _ => panic!("Unexpected time over 10_000 (got {})", race.distance_record),
-                };
+                let multiplier = multiplier(race.distance_record);
 
                 gold_race.distance_record =
                     gold_race.distance_record * multiplier + race.distance_record;
@@ -97,6 +91,15 @@ mod parse {
 
         Ok((input, (silver_races, gold_race)))
     }
+}
+
+const fn multiplier(mut input: u64) -> u64 {
+    let mut res = 10u64;
+    while input >= 10 {
+        input /= 10;
+        res *= 10;
+    }
+    res
 }
 
 #[cfg(test)]

@@ -80,9 +80,9 @@ impl Ord for Card {
 }
 
 impl Card {
-    fn into_gold(self) -> Self {
+    const fn into_gold(self) -> Self {
         match self {
-            Card::Jack => Card::Jocker,
+            Self::Jack => Self::Jocker,
             other => other,
         }
     }
