@@ -9,8 +9,8 @@ pub fn solve() -> AOCResult {
 }
 
 // ASCII for 'A' 3 times
-const AAA: u32 = 0x414141;
-const ZZZ: u32 = 0x5A5A5A;
+const AAA: u32 = 0x0041_4141;
+const ZZZ: u32 = 0x005A_5A5A;
 
 fn silver(program: &Program) -> u32 {
     let instructions = program.instructions.iter().cycle().zip(1u32..);

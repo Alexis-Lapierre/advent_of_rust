@@ -6,11 +6,12 @@ pub fn solve() -> AOCResult {
     (silver(&silver_input), nbr_possibility_beat_record(&gold)).into()
 }
 
-fn silver(races: &[Race]) -> f64 {
+fn silver(races: &[Race]) -> u64 {
     races.iter().map(nbr_possibility_beat_record).product()
 }
 
-fn nbr_possibility_beat_record(race: &Race) -> f64 {
+#[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+fn nbr_possibility_beat_record(race: &Race) -> u64 {
     let time = f64::from(race.time);
 
     // don't really know how to avoid precision loss, but should not impact regular aoc input
@@ -21,7 +22,7 @@ fn nbr_possibility_beat_record(race: &Race) -> f64 {
     let lower = ((time - root) / 2.).ceil();
     let upper = ((time + root) / 2.).floor();
 
-    upper - lower + 1.
+    (upper as u64) - (lower as u64) + 1
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -138,12 +139,12 @@ Distance:  9  40  200";
     #[test]
     fn test_silver() {
         let (parsed, gold_parsed) = parse(INPUT);
-        assert_eq!(nbr_possibility_beat_record(&gold_parsed), 71503.);
+        assert_eq!(nbr_possibility_beat_record(&gold_parsed), 71503);
         let mut silver_iter = parsed.iter().map(nbr_possibility_beat_record);
-        assert_eq!(silver_iter.next(), Some(4.));
-        assert_eq!(silver_iter.next(), Some(8.));
-        assert_eq!(silver_iter.next(), Some(9.));
+        assert_eq!(silver_iter.next(), Some(4));
+        assert_eq!(silver_iter.next(), Some(8));
+        assert_eq!(silver_iter.next(), Some(9));
         assert_eq!(silver_iter.next(), None);
-        assert_eq!(silver(&parsed), 288.);
+        assert_eq!(silver(&parsed), 288);
     }
 }
