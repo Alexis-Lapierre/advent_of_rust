@@ -4,7 +4,7 @@ use std::{cmp::Ordering, collections::HashMap};
 use crate::{aoc_result::AOCResult, read_file::read_file};
 
 pub fn solve() -> AOCResult {
-    let input = read_file(2023, 7).expect("File input/2023/06.txt to exist");
+    let input = read_file(2023, 7).expect("File input/2023/07.txt to exist");
     let mut parsed = parse::parse(&input);
     (silver(&mut parsed), gold(&mut parsed)).into()
 }
