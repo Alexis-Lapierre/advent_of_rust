@@ -3,7 +3,7 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 use self::parse::parse;
 
 pub fn solve() -> AOCResult {
-    let input = read_file(2023, 9).unwrap();
+    let input = read_file(2023, 9).expect("File input/2023/09.txt");
     let parsed = parse(&input);
 
     (silver(&parsed), gold(&parsed)).into()
