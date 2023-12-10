@@ -5,7 +5,8 @@ use crate::{aoc_result::AOCResult, read_file::read_file};
 pub fn solve() -> AOCResult {
     let input = read_file(2023, 10).expect("File input/2023/10.txt");
     let parsed = parse::parse(&input);
-    (silver(parsed), 0).into()
+    let parsed2 = parse::parse(&input);
+    (silver(parsed), gold(parsed2)).into()
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Copy, Clone)]
@@ -48,6 +49,17 @@ impl Pipe {
             Self::UpDown => (UP, DOWN),
             Self::UpLeft => (UP, LEFT),
             Self::UpRight => (UP, RIGHT),
+        }
+    }
+
+    const fn is_turning(self) -> bool {
+        match self {
+            Self::DownLeft => true,
+            Self::DownRight => true,
+            Self::LeftRight => false,
+            Self::UpDown => false,
+            Self::UpLeft => true,
+            Self::UpRight => true,
         }
     }
 }
@@ -104,6 +116,13 @@ impl Point {
             (Some(x), Some(y)) => Some(Self::new((x, y))),
             _ => None,
         }
+    }
+
+    fn difference(self, other: Self) -> (i8, i8) {
+        (
+            i8::try_from(self.x).unwrap() - i8::try_from(other.x).unwrap(),
+            i8::try_from(self.y).unwrap() - i8::try_from(other.y).unwrap(),
+        )
     }
 }
 
@@ -191,9 +210,59 @@ fn silver((map, start): (HashMap<Point, Pipe>, Point)) -> u32 {
     panic!()
 }
 
+fn shoelace_formula(angles: &[Point]) -> i64 {
+    let mut iter = angles.iter();
+    let first = iter.next().unwrap();
+    let mut previous = first;
+    let mut a = 0i64;
+    let mut b = 0i64;
+    for cur in angles.iter() {
+        a += i64::from(previous.y) * i64::from(cur.x);
+        b += i64::from(previous.x) * i64::from(cur.y);
+        previous = cur;
+    }
+
+    a += i64::from(previous.y) * i64::from(first.x);
+    b += i64::from(previous.x) * i64::from(first.y);
+
+    return i64::try_from(a.abs_diff(b)).unwrap() / 2 - (angles.len() as i64) / 2 + 1;
+}
+
+fn gold((map, start): (HashMap<Point, Pipe>, Point)) -> i64 {
+    let mut iter = start.list_neighbors_pointing_to_self(&map);
+    let mut left = iter.next().unwrap();
+    let right = iter.next().unwrap();
+    let mut previous_left = start;
+
+    let mut angles = Vec::new();
+
+    {
+        let (x, y) = right.difference(left);
+        if x != 0 && y != 0 {
+            angles.push(start);
+        }
+    }
+
+    for length in 1i64.. {
+        let pipe = *map.get(&left).unwrap();
+        angles.push(left);
+
+        if left == right {
+            return shoelace_formula(&angles);
+        }
+
+        let new_left = pipe_at_point_next(pipe, left, previous_left);
+
+        previous_left = left;
+        left = new_left;
+    }
+
+    panic!("PLEASE");
+}
+
 #[cfg(test)]
 mod test {
-    use super::{parse::parse, silver, Point};
+    use super::{gold, parse::parse, silver, Point};
 
     const SIMPLE_LOOP: &str = ".....
 .S-7.
@@ -205,6 +274,16 @@ mod test {
 SJ.L7
 |F--J
 LJ...";
+
+    const GOLD_LOOP: &str = "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........";
 
     #[test]
     fn test_find_start() {
@@ -218,5 +297,10 @@ LJ...";
         assert_eq!(silver(parsed), 4);
         let parsed = parse(COMPLEX_LOOP);
         assert_eq!(silver(parsed), 8);
+    }
+    #[test]
+    fn test_gold() {
+        let parsed = parse(GOLD_LOOP);
+        assert_eq!(gold(parsed), 4)
     }
 }
