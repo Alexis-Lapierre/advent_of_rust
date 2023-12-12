@@ -16,13 +16,17 @@ fn silver(lines: &[Line]) -> usize {
     lines
         .iter()
         .map(|line| {
-            let p = line
+            let count = line
                 .silver_possibilities()
                 .map(|possibility| line.is_possible_with(possibility))
                 .filter(|e| *e)
                 .count();
 
-            dbg!(p)
+            if count == 0 {
+                1
+            } else {
+                count
+            }
         })
         .sum()
 }
@@ -173,5 +177,11 @@ mod test {
     fn test_silver() {
         let parsed = parse(INPUT);
         assert_eq!(silver(&parsed), 21);
+    }
+
+    #[test]
+    fn parse_line() {
+        // No possibility because no question mark to do...
+        assert_eq!(silver(&parse("??.#???.#? 1,1")), 1);
     }
 }
