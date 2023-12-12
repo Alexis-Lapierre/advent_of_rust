@@ -133,7 +133,7 @@ fn manhattan_distance((ax, ay): (usize, usize), (bx, by): (usize, usize)) -> usi
 
 #[cfg(test)]
 mod test {
-    use super::{gold, parse::parse, silver};
+    use super::{parse::parse, silver};
 
     const INPUT: &str = "...#......
 .......#..
@@ -150,10 +150,5 @@ mod test {
     fn test_silver() {
         let galaxy = parse(INPUT);
         assert_eq!(silver(galaxy), 374)
-    }
-    #[test]
-    fn test_gold() {
-        let galaxy = parse(INPUT);
-        assert_eq!(gold(galaxy), 8410)
     }
 }

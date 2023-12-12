@@ -51,17 +51,6 @@ impl Pipe {
             Self::UpRight => (UP, RIGHT),
         }
     }
-
-    const fn is_turning(self) -> bool {
-        match self {
-            Self::DownLeft => true,
-            Self::DownRight => true,
-            Self::LeftRight => false,
-            Self::UpDown => false,
-            Self::UpLeft => true,
-            Self::UpRight => true,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd)]
@@ -243,7 +232,7 @@ fn gold((map, start): (HashMap<Point, Pipe>, Point)) -> i64 {
         }
     }
 
-    for length in 1i64.. {
+    for _ in 1i64.. {
         let pipe = *map.get(&left).unwrap();
         angles.push(left);
 
